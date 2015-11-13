@@ -1,0 +1,18 @@
+driver:
+  name: vagrant
+  require_chef_omnibus: latest
+  customize:
+    memory: 1024
+
+provisioner:
+  name: chef_zero
+
+platforms:
+  - name: centos-6.7
+    run_list:
+    - recipe[selinux::disabled]
+
+suites:
+  - name: service-single
+    run_list:
+    - recipe[hybris_service_test::single]
