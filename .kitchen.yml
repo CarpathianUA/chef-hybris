@@ -13,6 +13,9 @@ platforms:
     - recipe[selinux::disabled]
 
 suites:
-  - name: service-single
+  - name: hybris-standalone
     run_list:
-    - recipe[hybris_service_test::single]
+    - recipe[hybris_service_test::standalone]
+  - name: hybris-mysql
+    run_list:
+    - recipe[hybris_service_test::mysql]

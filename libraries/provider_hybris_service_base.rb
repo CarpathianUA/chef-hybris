@@ -13,67 +13,40 @@ class Chef
       # Mix in helpers from libraries/helpers.rb
       include HybrisCookbook::Helpers
 
+      action :build do
 
-      # Service related methods referred to in the :create and :delete
-      # other actions need to be implemented in the init system subclasses.
-      #
-      # create_stop_system_service
-      # delete_stop_service
+        # TODO: is it better to set hybris env variables based on resource values instead of setantenv.sh?
 
-      # All other methods are found in libraries/helpers.rb
-      #
-      # etc_dir, run_dir, log_dir, etc
-
-      action :create do
-
-        temp_download = "#{new_resource.download_temp_dir}/hybris-commerce-suite-#{new_resource.version}"
-
-        #create_user
-        #create_group
+        create_user unless new_resource.run_user == 'root'
+        create_group unless new_resource.run_group == 'root'
+        install_required_packages
         download_hybris_ecommerce_suite
         unzip_hybris_ecommerce_suite
+        chown_hybris_root
+        # TODO: move_unzipped_hybris_folder_to_root_dir
+        setup_ant_env
+        ant_cmds = ['clean', 'all']
+        ant_properties = ["input.template=#{new_resource.template}", "JAVAMEM=#{new_resource.jvm_mem}"]
 
-      end
-
-      def create_user
-        directory "/home/#{new_resource.user}" do
-          owner new_resource.user
-          group new_resource.user
-          mode '0755'
-          recursive true
-          action :create
+        # clean and build hybris
+        if deployed?
+          run_ant(new_resource.platform_dir, ant_cmds, ant_properties) if new_resource.rebuild
+        else
+          run_ant(new_resource.platform_dir, ant_cmds, ant_properties)
         end
 
-        user new_resource.user do
-          comment 'hybris service account'
-          home "/home/#{new_resource.user}"
-          shell '/sbin/nologin'
+        # database config setup
+        case new_resource.db_type
+        when 'mysql'
+          install_mysql_driver
         end
-      end
 
-      def create_group
-        group new_resource.group do
-          members new_resource.user
-          append true
-        end
-      end
+        # ant initialize
+        run_ant(new_resource.platform_dir, ['initialize'], []) if new_resource.ant_initialize
+        # ant update system
+        run_ant(new_resource.platform_dir, ['update system'], []) if new_resource.ant_update_system
 
-      def download_hybris_ecommerce_suite
-        remote_file temp_download do
-          source new_resource.download_url
-          owner new_resource.user
-          group new_resource.group
-          mode '0755'
-          action :create
-        end
       end
-
-      def unzip_hybris_ecommerce_suite
-        execute 'unzip hybris ecommerce suite' do
-          command "unzip -o #{temp_download} -d #{new_resource.root_dir}"
-        end
-      end
-
     end
   end
 end

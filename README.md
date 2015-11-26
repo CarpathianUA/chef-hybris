@@ -1,8 +1,6 @@
 Hybris Cookbook
 =====================
 
-WARNING - THIS COOKBOOK IS A WORK IN PROGRESS. IT DOES NOT WORK YET
-
 The Hybris Cookbook is a library cookbook that provides resource primitives
 (LWRPs) for use in recipes.
 
@@ -15,7 +13,7 @@ This cookbook can install and configure the "Hyrbis Commerce Suite".
 - Installation of the platform from a bundled template
 - Platform Configuration
 - Adding extensions
-- Clustering
+- Single and Mulitnode Cluster.  Multi-tenant is not supported.
 
 ####Supported databases:
 - MySQL
@@ -24,13 +22,15 @@ This cookbook can install and configure the "Hyrbis Commerce Suite".
 ####Supported versions:
 - 5.7
 
+
+
+
 Requirements
 ------------
 - Chef 12.4 or higher
 - Ruby 1.9 or higher (preferably from the Chef full-stack installer)
 - Network accessible package repositories
 - 'recipe[selinux::disabled]' on RHEL platforms
-- Pre-baked images are recommended due to the >1GB download size of Hybris Commerce
 
 Platform Support
 ----------------
@@ -84,7 +84,7 @@ end
 
 Resources Overview
 ------------------
-### hybris_service
+### hybris_build
 
 The `hybris_service` installs a new node instance.
 
@@ -126,6 +126,8 @@ The `hybris_config` resource is a wrapper around the core Chef
 `instance` parameter to calculate the path on the filesystem where
 file is rendered.
 
+WARNING: hybris_config will overwrite any config set from the template during build.  ENsure you include any paramaters you want to retain in the hybris_config resource variables.
+
 #### Example
 
 ```ruby
@@ -158,6 +160,46 @@ end
 
 #### Actions
 - `:create` - Renders the template to disk at a path calculated using
+  the instance parameter.
+
+- `:delete` - Deletes the file from the conf.d directory calculated
+  using the instance parameter.
+
+### hybris_server
+
+The `hybris_server` resource is used to install and manage the bundled hybris tomcat server. It manages the server.xml config and sets up the Tanuki service wrapper.
+
+
+#### Example
+
+
+#### Parameters
+
+
+### hybris_extension
+
+The `hybris_config` resource is a wrapper around the core Chef
+`template` resource. Instead of a `path` parameter, it uses the
+`instance` parameter to calculate the path on the filesystem where
+file is rendered.
+
+#### Example
+
+```ruby
+hybris_extension 'myextension' do
+  source 'local.properties.erb'
+  action :enable
+end
+```
+
+#### Parameters
+
+- `name` - The base name of the configuration file to be
+  rendered into the conf.d directory on disk. Defaults to the resource
+  name.
+
+#### Actions
+- `:enable` - Renders the template to disk at a path calculated using
   the instance parameter.
 
 - `:delete` - Deletes the file from the conf.d directory calculated

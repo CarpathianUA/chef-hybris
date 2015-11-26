@@ -19,6 +19,9 @@ else
   # default service
   Chef::Platform.set resource: :hybris_service, provider: Chef::Provider::HybrisServiceSysvinit
 
+  # build
+  Chef::Platform.set resource: :hybris_build, provider: Chef::Provider::HybrisBuild
+
   # config
   Chef::Platform.set resource: :hybris_config, provider: Chef::Provider::HybrisConfig
 
