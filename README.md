@@ -189,7 +189,7 @@ This is not yet done.
 #### Example
 
 ```ruby
-hybris_build 'clean and build all' do
+hybris_build 'package for production deployment' do
   commands ['production']
   properties []
   action :build
@@ -197,7 +197,7 @@ end
 ```
 
 ```ruby
-hybris_deploy 'clean and build all' do
+hybris_deploy 'deploy' do
   extensions_zip '/hybris/hybris/temp/hybris/hybrisServer/hybrisServer-AllExtensions.zip'
   config_zip '/hybris/hybris/temp/hybris/hybrisServer/hybrisServer-Config.zip'
   action :deploy
