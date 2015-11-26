@@ -134,18 +134,20 @@ module HybrisCookbook
       start_hybris(startup_script)
     end
 
-    def install_mysql_driver(download_url='https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.0.8.tar.gz')
+    def install_mysql_driver(download_url='http://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.37.tar.gz')
       filename = URI(download_url).path.split('/').last
       remote_file "#{Chef::Config['file_cache_path']}/#{filename}" do
         source download_url
         mode '0755'
+        notifies :run, "execute[extract mysql driver #{filename}]", :immediately
       end
 
-      execute "extract #{filename}" do
+      execute "extract mysql driver #{filename}" do
         cwd Chef::Config['file_cache_path']
         command "tar -xzf #{filename} && cp -v #{File.basename(filename, '.tar.gz')}/*.jar "\
         "#{new_resource.platform_dir}/lib/dbdriver/ && chown -R #{new_resource.run_user}:#{new_resource.run_group} "\
         "#{new_resource.platform_dir}/lib/dbdriver/"
+        action :nothing
       end
     end
 

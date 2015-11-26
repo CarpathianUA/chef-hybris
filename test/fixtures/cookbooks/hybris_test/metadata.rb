@@ -1,4 +1,4 @@
-name 'hybris_service_test'
+name 'hybris_test'
 version '0.0.1'
 
 depends 'java'

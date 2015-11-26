@@ -15,7 +15,7 @@ platforms:
 suites:
   - name: hybris-standalone
     run_list:
-    - recipe[hybris_service_test::standalone]
-  - name: hybris-mysql
+    - recipe[hybris_test::standalone]
+  - name: hybris-config
     run_list:
-    - recipe[hybris_service_test::mysql]
+    - recipe[hybris_test::config]

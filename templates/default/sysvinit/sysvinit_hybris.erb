@@ -71,10 +71,10 @@ status() {
 
 # Start the Hybris server.
 start() {
-  echo -n $"\033[31; Attempting to Starting $NAME with $STARTUP_SCRIPT start \033[0m"
+  echo "Attempting to Starting $NAME with $STARTUP_SCRIPT start"
   RETVAL=1
   if running; then
-    echo -e "\033[31;1mHybris is already running.\033[0m"
+    echo "Hybris is already running."
     exit 1
   fi
 
@@ -82,16 +82,17 @@ start() {
   if ! /bin/su -m $RUN_USER -c "${STARTUP_SCRIPT} start >&/dev/null"; then
     echo "FAILED: Could not start hybris."
   else
+    RETVAL=$?
     sleep 5
     if running; then
-      echo -e "\033[31;1Hybris is running.\033[0m"
+      echo "Hybris is running."
     else
       sleep 20
       if running; then
-        echo -e "\033[31;1Hybris is running.\033[0m"
+        echo "Hybris is running."
         RETVAL=0
       else
-        echo "\033[31;FAILED: Could not start hybris. \033[0m"
+        echo "Could not start hybris."
         RETVAL=1
       fi
     fi
@@ -102,7 +103,7 @@ start() {
 
 #Stop the Hybris server.
 stop() {
-  echo -n "\033[31;Attempting to shut down hybris: \033[0m"
+  echo "Attempting to shut down hybris.."
   echo
   cd <%= @config.platform_dir %>
   /bin/su -m $RUN_USER -c "${STARTUP_SCRIPT} stop"
@@ -110,10 +111,10 @@ stop() {
   sleep 5
 
   if running; then
-    echo -n "\033[31; Waiting for Hybris to shut down. \033[0m"
+    echo "Waiting for Hybris to shut down..."
     sleep 20
     if running; then
-      echo -n "\033[31; Failed to shut down hybris. \033[0m"
+      echo "Failed to shut down hybris."
       exit 1
     fi
   else
@@ -123,7 +124,7 @@ stop() {
 
 #Stop the Hybris server.
 restart() {
-  echo -n "\033[31;Attempting to shut down hybris: \033[0m"
+  echo "Attempting to shut down hybris.."
   echo
   cd <%= @config.platform_dir %>
   /bin/bash -c "${STARTUP_SCRIPT} stop"
@@ -131,10 +132,10 @@ restart() {
   sleep 5
 
   if running; then
-    echo -n "\033[31;Waiting for Hybris to shut down.\033[0m"
+    echo "Waiting for Hybris to shut down.."
     sleep 20
     if running; then
-      echo -n "\033[31;Failed to shut down hybris.\033[0m"
+      echo "Failed to shut down hybris."
       exit 1
     fi
   else

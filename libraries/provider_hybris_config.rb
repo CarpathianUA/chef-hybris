@@ -34,9 +34,25 @@ class Chef
           source new_resource.source
           cookbook new_resource.cookbook
           action :create
+          notifies :run, 'execute[Stoping hybris for config reload]', :immediately
         end
 
-        restart_hybris(new_resource.startup_script) if new_resource.restart
+        # requires full path to startup_script
+        execute "Stoping hybris for config reload" do
+          cwd ::File.dirname(new_resource.startup_script)
+          command "#{new_resource.startup_script} stop"
+          only_if { new_resource.restart }
+          action :nothing
+          notifies :run, 'execute[Starting hybris for config reload]', :immediately
+        end
+
+        # requires full path to startup_script
+        execute "Starting hybris for config reload" do
+          cwd ::File.dirname(new_resource.startup_script)
+          command "#{new_resource.startup_script} start"
+          only_if { new_resource.restart }
+          action :nothing
+        end
 
       end
     end
