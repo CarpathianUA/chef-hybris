@@ -14,8 +14,6 @@ hybris_service 'default' do
   download_checksum 'e6e293f9a1b43faec76daab8b70294099a3df3d7661ff9d29a84cdaaf1340f61'
   download_temp_dir '/tmp'
   template 'production'
-  ant_initialize true
-  ant_update_system true
   rebuild true
   action [:build, :start]
 end

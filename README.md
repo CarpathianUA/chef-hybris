@@ -99,8 +99,8 @@ end
 - `:jvm_mem` JVM Memory allocation. default: '3G'
 - `:rebuild` Trigger a rebuild when already deployed once. If file hybris/config/local.properties exists, a deploy has already happened. :default => false
 - `:db_type` Only used to install db driver for mysql at the moment. default: 'mysql'
-- `:ant_initialize` initializes the db after build. Can be triggered manually from UI. :default => false
-- `:ant_update_system` Performs db update. Can be triggered manually from UI. :default => false
+- `:ant_initialize` initializes the db after build. Can be triggered manually from UI. :default => false. NOT YET WORKING.
+- `:ant_update_system` Performs db update. Can be triggered manually from UI. :default => false. NOT YET WORKING.
 
 #### Actions
 
