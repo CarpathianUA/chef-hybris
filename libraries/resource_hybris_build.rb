@@ -7,7 +7,8 @@ class Chef
       actions :build
       default_action :build
 
-      attribute :platform_dir, kind_of: String, default: '/hybris/hybris/bin/platform'
+      attribute :root_dir, kind_of: String, default: '/hybris/hybris'
+      attribute :platform_dir, kind_of: String, default: lazy {|r| "#{r.root_dir}/bin/platform" }
       attribute :ant_setup_script, kind_of: String, default: '/hybris/hybris/bin/platform/setantenv.sh'
       attribute :commands, kind_of: Array, default: nil
       attribute :properties, kind_of: Array, default: nil

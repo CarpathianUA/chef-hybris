@@ -1,12 +1,14 @@
 Hybris Cookbook
 =====================
 
+WARNING:  This cookbook is still in Beta.
+
 The Hybris Cookbook is a library cookbook that provides resource primitives
-(LWRPs) for use in recipes.
+(HWRPs) for use in recipes.
 
 Scope
 -----
-This cookbook can install and configure the "Hyrbis Commerce Suite".  
+This cookbook can build, configure and deploy the "Hyrbis Commerce Suite".  
 
 
 ####Supported Core Features
@@ -20,65 +22,45 @@ This cookbook can install and configure the "Hyrbis Commerce Suite".
 - HSQLDB
 
 ####Supported versions:
-- 5.7
-
-
+- Hybris Commerce 5.7+
 
 
 Requirements
 ------------
 - Chef 12.4 or higher
 - Ruby 1.9 or higher (preferably from the Chef full-stack installer)
-- Network accessible package repositories
-- 'recipe[selinux::disabled]' on RHEL platforms
 
 Platform Support
 ----------------
-The following platforms have been tested with Test Kitchen:
 
-```
-|----------------+-----+-----+-----+-----+-----|
-|                | 5.0 | 5.1 | 5.5 | 5.6 | 5.7 |
-|----------------+-----+-----+-----+-----+-----|
-| debian-7       |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| ubuntu-12.04   |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| ubuntu-14.04   |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| ubuntu-15.04   |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| centos-5       |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| centos-6       |     |     |     |  X  |     |
-|----------------+-----+-----+-----+-----+-----|
-| centos-7       |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| amazon         |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-| fedora-20      |     |     |     |     |     |
-|----------------+-----+-----+-----+-----+-----|
-```
+Currently only Centos-6 has been tested with Test Kitchen.
+
 
 Cookbook Dependencies
 ------------
 - yum
-- mysql
 
 Usage
 -----
-Place a dependency on the mysql cookbook in your cookbook's metadata.rb
+Place a dependency on the hybris cookbook in your cookbook's metadata.rb
 ```ruby
 depends 'hybris', '~> 0.0.1'
 ```
 
-Then, in a recipe:
+Ensure you install java before including the resource. 
+
+Eg:
 
 ```ruby
-hybris_service 'foo' do
-  version '5.7'
-  cluster_enabled :false
-  action [:create, :start]
+include_recipe 'java'
+hybris_service 'default' do
+  version '5.7.0.2'
+  download_url 'http://my_own_hybris_download_url/hybris-commerce-suite-5.7.0.2.zip'
+  download_checksum 'e6e293f9a1b43faec76daab8b70294099a3df3d7661ff9d29a84cdaaf1340f61'
+  download_temp_dir '/tmp'
+  action [:build, :start]
+  rebuild true
+  template 'develop'
 end
 ```
 
@@ -90,120 +72,162 @@ The `hybris_service` installs a new node instance.
 
 #### Example
 ```ruby
-hybris_service 'foo' do
+hybris_service 'default' do
   version '5.7.0.2'
-  cluster_enabled :true
-  download_url 'http://my_custom_download_url.com/hybris-commerce-suite-5.7.0.2.zip'
-  action [:create, :start]
+  download_url 'http://my_own_hybris_download_url/hybris-commerce-suite-5.7.0.2.zip'
+  download_checksum 'e6e293f9a1b43faec76daab8b70294099a3df3d7661ff9d29a84cdaaf1340f61'
+  download_temp_dir '/tmp'
+  action [:build, :start]
+  rebuild true
+  template 'production'
 end
 ```
 
 #### Parameters
 
-- `version` - Specifies the version being downloaded in download_url. Required.
-- `download_url` - Hybris download links require authentication, so you must provide your own custom download link. Required.
-- `user` - The service account for Hybris
-- `group` - The group account for Hybris
+- `:version` Hybris ecommerce version.  Not used in download_url.
+- `:download_url` Hybris ecommerce download url.  Must be a zip. You will need to put this somewhere as Hybris downloads require authentication.
+- `:download_checksum` checksum for Hybris download.
+- `:download_temp_dir` temp directory to download hybris zip to before extraction.
+- `:run_user` Hybris service account. Default 'hybris'
+- `:run_group` Hybris service group. Default 'hybris'
+- `:extract_to` Parent directroy to extract hybris zip into. default: '/hybris' 
+- `:root_dir` Root dir of Hybris after extraction. default: '/hybris/hybris'
+- `:platform_dir` Hybris platform directory default: <root_dir>/bin/platform
+- `:ant_setup_script` Path to ant env setup script default: <root_dir>/bin/platform/setantenv.sh
+- `:template` The Hybris build template to use. default: 'develop'
+- `:jvm_mem` JVM Memory allocation. default: '3G'
+- `:rebuild` Trigger a rebuild when already deployed once. If file hybris/config/local.properties exists, a deploy has already happened. :default => false
+- `:db_type` Only used to install db driver for mysql at the moment. default: 'mysql'
+- `:ant_initialize` initializes the db after build. Can be triggered manually from UI. :default => false
+- `:ant_update_system` Performs db update. Can be triggered manually from UI. :default => false
 
 #### Actions
 
-- `:create` - Configures everything but the underlying operating system service.
+- `:build` - Performs an ant clean all build of the Hybris ecommerce suite.
 - `:start` - Starts the underlying operating system service
 - `:stop`-  Stops the underlying operating system service
 - `:restart` - Restarts the underlying operating system service
-- `:reload` - Reloads the underlying operating system service
+- `:enable` - Enables the underlying operating system service
 
 #### Providers
 Chef selects the appropriate provider based on platform and version,
 but you can specify one if your platform support it.
 
-- `Chef::Provider::HybrisBase` -
+- `Chef::Provider::HybrisServiceSysvinit` -
 
 ### hybris_config
 
 The `hybris_config` resource is a wrapper around the core Chef
-`template` resource. Instead of a `path` parameter, it uses the
-`instance` parameter to calculate the path on the filesystem where
-file is rendered.
+`template` resource. to generate the hybris/config/local.properties config file.  Use this to set your own db connection details and other config.  Only include in a recipe after the hybris_service resource.  You need to provide your own template file.
 
-WARNING: hybris_config will overwrite any config set from the template during build.  ENsure you include any paramaters you want to retain in the hybris_config resource variables.
+**WARNING**: hybris_config will overwrite any config set from the template during build.  Ensure you include any paramaters you want to retain in the hybris_config resource variables.
 
 #### Example
 
 ```ruby
-hybris_config[default] do
+hybris_config 'my custom config' do
+  restart true
   source 'local.properties.erb'
+  cookbook 'hybris_test'
+  variables node['hybris_test']['hybris_config']
   action :create
 end
 ```
 
 #### Parameters
 
-- `config_name` - The base name of the configuration file to be
-  rendered into the conf.d directory on disk. Defaults to the resource
-  name.
-
-- `cookbook` - The name of the cookbook to look for the template
-  source. Defaults to nil
-
-- `group` - System group for file ownership. Defaults to 'hybris'.
-
-- `owner` - System user for file ownership. Defaults to 'hybris'.
-
-- `source` - Template in cookbook to be rendered.
-
-- `variables` - Variables to be passed to the underlying `template`
-  resource.
-
-- `version` - Version of the `hybris_service` instance the config is
-  meant for. Used to calculate path.
+- `:config_name`, Not used. name_attribute: true
+- `:root_dir`, Hybris root directory. Default: '/hybris/hybris', required: true
+- `:restart`, Restart hybris server on new or changed template? Default: false
+- `:startup_script`, Path to the hybris startup script file. Default: <hybris_root>/bin/platform/hybrisserver.sh
+- `:path` Path to place config file. default: <root_dir>/config/local.properties
+- `:cookbook`, Cookbook source for template file. default: nil
+- `:group`, config file group. default: 'hybris'
+- `:owner`, config file owner default: 'hybris'
+- `:source`, template source file. default: 'local.properties.erb'
+- `:variables`, variables to pass template (Hash), default: nil
 
 #### Actions
 - `:create` - Renders the template to disk at a path calculated using
   the instance parameter.
 
-- `:delete` - Deletes the file from the conf.d directory calculated
-  using the instance parameter.
 
-### hybris_server
+### hybris_build
+The `hybris_build` resource is a wrapper around the ant build command for running the various ant commands bundled with Hybris Commerce .
 
-The `hybris_server` resource is used to install and manage the bundled hybris tomcat server. It manages the server.xml config and sets up the Tanuki service wrapper.
-
-
-#### Example
-
-
-#### Parameters
-
-
-### hybris_extension
-
-The `hybris_config` resource is a wrapper around the core Chef
-`template` resource. Instead of a `path` parameter, it uses the
-`instance` parameter to calculate the path on the filesystem where
-file is rendered.
+This is not yet done.
 
 #### Example
 
 ```ruby
-hybris_extension 'myextension' do
-  source 'local.properties.erb'
-  action :enable
+hybris_build 'clean and build all' do
+  commands ['clean', 'all']
+  properties ['input.template=production']
+  action :build
 end
 ```
 
 #### Parameters
 
-- `name` - The base name of the configuration file to be
-  rendered into the conf.d directory on disk. Defaults to the resource
-  name.
+- `:root_dir` Root dir of Hybris after extraction. default: '/hybris/hybris'
+- `:platform_dir` Hybris platform directory default: <root_dir>/bin/platform
+- `:ant_setup_script` Path to ant env setup script default: <root_dir>/bin/platform/
+- `:commands`,  Array of ant commands. default: nil
+- `:properties`, Array of ant properties. default: nil
 
 #### Actions
-- `:enable` - Renders the template to disk at a path calculated using
-  the instance parameter.
+- `:build` - Runs ant command.
+- 
 
-- `:delete` - Deletes the file from the conf.d directory calculated
-  using the instance parameter.
+### hybris_deploy
+
+The `hybris_deploy` deploys hybrisServer-AllExtensions.zip and hybrisServer-Config.zip files. The .zip files can be pre generated by a seperate build process such as a jenkins server.  
+
+This is not yet done.
+
+#### Example
+
+```ruby
+hybris_build 'clean and build all' do
+  commands ['production']
+  properties []
+  action :build
+end
+```
+
+```ruby
+hybris_deploy 'clean and build all' do
+  extensions_zip '/hybris/hybris/temp/hybris/hybrisServer/hybrisServer-AllExtensions.zip'
+  config_zip '/hybris/hybris/temp/hybris/hybrisServer/hybrisServer-Config.zip'
+  action :deploy
+end
+```
+
+#### Parameters
+
+TODO:
+
+#### Actions
+TODO:
+
+
+### hybris_extension
+
+The `hybris_extension` resource manages the extension list to compile in the extensions.xml file.
+
+This is not yet done.
+
+#### Example
+
+TODO:
+
+#### Parameters
+
+TODO:
+
+#### Actions
+TODO:
 
 #### More Examples
 
